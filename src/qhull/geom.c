@@ -1,39 +1,39 @@
 /*<html><pre>  -<a                             href="qh-geom.htm"
   >-------------------------------</a><a name="TOP">-</a>
 
-   geom.c 
+   geom.c
    geometric routines of qhull
 
    see qh-geom.htm and geom.h
 
-   copyright (c) 1993-2002 The Geometry Center        
+   copyright (c) 1993-2002 The Geometry Center
 
    infrequent code goes into geom2.c
 */
-   
+
 #include "qhull_a.h"
-   
+
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="distplane">-</a>
-  
+
   qh_distplane( point, facet, dist )
     return distance from point to facet
 
   returns:
     dist
     if qh.RANDOMdist, joggles result
-  
-  notes:  
+
+  notes:
     dist > 0 if point is above facet (i.e., outside)
     does not error (for sortfacets)
-    
+
   see:
     qh_distnorm in geom2.c
 */
 void qh_distplane (pointT *point, facetT *facet, realT *dist) {
   coordT *normal= facet->normal, *coordp, randr;
   int k;
-  
+
   switch(qh hull_dim){
   case 2:
     *dist= facet->offset + point[0] * normal[0] + point[1] * normal[1];
@@ -50,7 +50,7 @@ void qh_distplane (pointT *point, facetT *facet, realT *dist) {
   case 6:
     *dist= facet->offset+point[0]*normal[0]+point[1]*normal[1]+point[2]*normal[2]+point[3]*normal[3]+point[4]*normal[4]+point[5]*normal[5];
     break;
-  case 7:  
+  case 7:
     *dist= facet->offset+point[0]*normal[0]+point[1]*normal[1]+point[2]*normal[2]+point[3]*normal[3]+point[4]*normal[4]+point[5]*normal[5]+point[6]*normal[6];
     break;
   case 8:
@@ -82,9 +82,9 @@ void qh_distplane (pointT *point, facetT *facet, realT *dist) {
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="findbest">-</a>
-  
+
   qh_findbest( point, startfacet, bestoutside, qh_ISnewfacets, qh_NOupper, dist, isoutside, numpart )
-    find facet that is furthest below a point 
+    find facet that is furthest below a point
     for upperDelaunay facets
       returns facet only if !qh_NOupper and clearly above
 
@@ -101,7 +101,7 @@ void qh_distplane (pointT *point, facetT *facet, realT *dist) {
 
   see also:
     qh_findbestnew()
-    
+
   notes:
     If merging (testhorizon), searches horizon facets of coplanar best facets because
     after qh_distplane, this and qh_partitionpoint are the most expensive in 3-d
@@ -116,11 +116,11 @@ void qh_distplane (pointT *point, facetT *facet, realT *dist) {
     qh_findbestnew set if qh_sharpnewfacets returns True (to use qh_findbestnew)
     qh.bestfacet_notsharp set if qh_sharpnewfacets returns False
 
-  when called by qh_findfacet(), qh_partitionpoint(), qh_partitioncoplanar(), 
+  when called by qh_findfacet(), qh_partitionpoint(), qh_partitioncoplanar(),
                  qh_check_bestdist(), qh_addpoint()
     indicated by !qh_ISnewfacets
     returns best facet in neighborhood of given facet
-      this is best facet overall if dist > -   qh.MAXcoplanar 
+      this is best facet overall if dist > -   qh.MAXcoplanar
         or hull has at least a "spherical" curvature
 
   design:
@@ -134,12 +134,12 @@ void qh_distplane (pointT *point, facetT *facet, realT *dist) {
       if so, future calls go to qh_findbestnew()
     test horizon facets
 */
-facetT *qh_findbest (pointT *point, facetT *startfacet, 
+facetT *qh_findbest (pointT *point, facetT *startfacet,
 		     boolT bestoutside, boolT isnewfacets, boolT noupper,
 		     realT *dist, boolT *isoutside, int *numpart) {
   realT bestdist= -REALmax/2 /* avoid underflow */;
   facetT *facet, *neighbor, **neighborp, *bestfacet= NULL;
-  facetT *bestfacet_all= startfacet;
+  // facetT *bestfacet_all= startfacet; // unused
   int oldtrace= qh IStracing;
   unsigned int visitid= ++qh visit_id;
   int numpartnew=0;
@@ -160,7 +160,7 @@ facetT *qh_findbest (pointT *point, facetT *startfacet,
   if (!startfacet->flipped) {  /* test startfacet */
     *numpart= 1;
     qh_distplane (point, startfacet, dist);  /* this code is duplicated below */
-    if (!bestoutside && *dist >= qh MINoutside 
+    if (!bestoutside && *dist >= qh MINoutside
     && (!startfacet->upperdelaunay || !noupper)) {
       bestfacet= startfacet;
       goto LABELreturn_best;
@@ -168,13 +168,13 @@ facetT *qh_findbest (pointT *point, facetT *startfacet,
     bestdist= *dist;
     if (!startfacet->upperdelaunay) {
       bestfacet= startfacet;
-    } 
-  }else 
+    }
+  }else
     *numpart= 0;
   startfacet->visitid= visitid;
   facet= startfacet;
   while (facet) {
-    trace4((qh ferr, "qh_findbest: neighbors of f%d, bestdist %2.2g f%d\n", 
+    trace4((qh ferr, "qh_findbest: neighbors of f%d, bestdist %2.2g f%d\n",
                 facet->id, bestdist, getid_(bestfacet)));
     FOREACHneighbor_(facet) {
       if (!neighbor->newfacet && isnewfacets)
@@ -186,7 +186,7 @@ facetT *qh_findbest (pointT *point, facetT *startfacet,
 	(*numpart)++;
 	qh_distplane (point, neighbor, dist);
 	if (*dist > bestdist) {
-	  if (!bestoutside && *dist >= qh MINoutside 
+	  if (!bestoutside && *dist >= qh MINoutside
 	  && (!neighbor->upperdelaunay || !noupper)) {
 	    bestfacet= neighbor;
 	    goto LABELreturn_best;
@@ -201,13 +201,13 @@ facetT *qh_findbest (pointT *point, facetT *startfacet,
     } /* end of FOREACHneighbor */
     facet= neighbor;  /* non-NULL only if *dist>bestdist */
   } /* end of while facet (directed search) */
-  if (isnewfacets) { 
+  if (isnewfacets) {
     if (!bestfacet) {
-      bestdist= -REALmax/2; 
+      bestdist= -REALmax/2;
       bestfacet= qh_findbestnew (point, startfacet->next, &bestdist, bestoutside, isoutside, &numpartnew);
       testhorizon= False; /* qh_findbestnew calls qh_findbesthorizon */
     }else if (!qh findbest_notsharp && bestdist < - qh DISTround) {
-      if (qh_sharpnewfacets()) { 
+      if (qh_sharpnewfacets()) {
 	/* seldom used, qh_findbestnew will retest all facets */
 	zinc_(Zfindnewsharp);
 	bestfacet= qh_findbestnew (point, bestfacet, &bestdist, bestoutside, isoutside, &numpartnew);
@@ -224,7 +224,7 @@ Please report this error to qhull_bug@geom.umn.edu with the input and all of the
        startfacet->id);
     qh_errexit (qh_ERRqhull, startfacet, NULL);
   }
-  if (testhorizon) 
+  if (testhorizon)
     bestfacet= qh_findbesthorizon (!qh_IScheckmax, point, bestfacet, noupper, &bestdist, &numpartnew);
   *dist= bestdist;
   if (isoutside && bestdist < qh MINoutside)
@@ -240,7 +240,7 @@ LABELreturn_best:
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="findbesthorizon">-</a>
-  
+
   qh_findbesthorizon( qh_IScheckmax, point, startfacet, qh_NOupper, &bestdist, &numpart )
     search coplanar and better horizon facets from startfacet/bestdist
     ischeckmax turns off statistics and minsearch update
@@ -267,7 +267,7 @@ LABELreturn_best:
 
     searchdist is qh.max_outside + 2 * DISTround
       + max( MINvisible('Vn'), MAXcoplanar('Un'));
-    This setting is a guess.  It must be at least max_outside + 2*DISTround 
+    This setting is a guess.  It must be at least max_outside + 2*DISTround
     because a facet may have a geometric neighbor across a vertex
 
   design:
@@ -303,14 +303,14 @@ facetT *qh_findbesthorizon (boolT ischeckmax, pointT* point, facetT *startfacet,
   coplanarset_size= 0;
   facet= startfacet;
   while (True) {
-    trace4((qh ferr, "qh_findbesthorizon: neighbors of f%d bestdist %2.2g f%d ischeckmax? %d noupper? %d minsearch %2.2g searchdist %2.2g\n", 
+    trace4((qh ferr, "qh_findbesthorizon: neighbors of f%d bestdist %2.2g f%d ischeckmax? %d noupper? %d minsearch %2.2g searchdist %2.2g\n",
 		facet->id, *bestdist, getid_(bestfacet), ischeckmax, noupper,
 		minsearch, searchdist));
     FOREACHneighbor_(facet) {
-      if (neighbor->visitid == visitid) 
+      if (neighbor->visitid == visitid)
 	continue;
       neighbor->visitid= visitid;
-      if (!neighbor->flipped) { 
+      if (!neighbor->flipped) {
 	qh_distplane (point, neighbor, &dist);
 	(*numpart)++;
 	if (dist > *bestdist) {
@@ -326,12 +326,12 @@ facetT *qh_findbesthorizon (boolT ischeckmax, pointT* point, facetT *startfacet,
 	      }
 	    }
 	  }
-	}else if (dist < minsearch) 
+	}else if (dist < minsearch)
 	  continue;  /* if ischeckmax, dist can't be positive */
 #if qh_MAXoutside
 	if (ischeckmax && dist > neighbor->maxoutside)
 	  neighbor->maxoutside= dist;
-#endif      
+#endif
       } /* end of !flipped */
       if (nextfacet) {
 	if (!coplanarset_size++) {
@@ -344,10 +344,10 @@ facetT *qh_findbesthorizon (boolT ischeckmax, pointT* point, facetT *startfacet,
       nextfacet= neighbor;
     } /* end of EACHneighbor */
     facet= nextfacet;
-    if (facet) 
+    if (facet)
       nextfacet= NULL;
     else if (!coplanarset_size)
-      break; 
+      break;
     else if (!--coplanarset_size) {
       facet= SETfirst_(qh coplanarset);
       SETtruncate_(qh coplanarset, 0);
@@ -366,7 +366,7 @@ facetT *qh_findbesthorizon (boolT ischeckmax, pointT* point, facetT *startfacet,
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="findbestnew">-</a>
-  
+
   qh_findbestnew( point, startfacet, dist, isoutside, numpart )
     find best newfacet for point
     searches all of qh.newfacet_list starting at startfacet
@@ -383,7 +383,7 @@ facetT *qh_findbesthorizon (boolT ischeckmax, pointT* point, facetT *startfacet,
     Always used for merged new facets (see qh_USEfindbestnew)
     Avoids upperdelaunay facet unless (isoutside and outside)
 
-    Uses qh.visit_id, qh.coplanarset.  
+    Uses qh.visit_id, qh.coplanarset.
     If share visit_id with qh_findbest, coplanarset is incorrect.
 
     If merging (testhorizon), searches horizon facets of coplanar best facets because
@@ -409,7 +409,8 @@ facetT *qh_findbesthorizon (boolT ischeckmax, pointT* point, facetT *startfacet,
 */
 facetT *qh_findbestnew (pointT *point, facetT *startfacet,
 	   realT *dist, boolT bestoutside, boolT *isoutside, int *numpart) {
-  realT bestdist= -REALmax/2, minsearch= -REALmax/2;
+  realT bestdist= -REALmax/2;
+  // realT minsearch= -REALmax/2;  // unused
   facetT *bestfacet= NULL, *facet;
   int oldtrace= qh IStracing, i;
   unsigned int visitid= ++qh visit_id;
@@ -422,7 +423,7 @@ facetT *qh_findbestnew (pointT *point, facetT *startfacet,
       fprintf(qh ferr, "qhull precision error (qh_findbestnew): merging has formed and deleted a cone of new facets.  Can not continue.\n");
     else
       fprintf(qh ferr, "qhull internal error (qh_findbestnew): no new facets for point p%d\n",
-      	      qh furthest_id);      
+      	      qh furthest_id);
     qh_errexit (qh_ERRqhull, NULL, NULL);
   }
   zinc_(Zfindnew);
@@ -464,8 +465,8 @@ facetT *qh_findbestnew (pointT *point, facetT *startfacet,
     } /* FORALLfacet from startfacet or qh newfacet_list */
   }
   if (testhorizon || !bestfacet)
-    bestfacet= qh_findbesthorizon (!qh_IScheckmax, point, bestfacet ? bestfacet : startfacet, 
-	                                !qh_NOupper, &bestdist, numpart);  
+    bestfacet= qh_findbesthorizon (!qh_IScheckmax, point, bestfacet ? bestfacet : startfacet,
+	                                !qh_NOupper, &bestdist, numpart);
   *dist= bestdist;
   if (isoutside && *dist < qh MINoutside)
     *isoutside= False;
@@ -481,14 +482,14 @@ LABELreturn_bestnew:
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="backnormal">-</a>
-  
+
   qh_backnormal( rows, numrow, numcol, sign, normal, nearzero )
     given an upper-triangular rows array and a sign,
     solve for normal equation x using back substitution over rows U
 
   returns:
      normal= x
-      
+
      if will not be able to divzero() when normalized (qh.MINdenom_2 and qh.MINdenom_1_2),
        if fails on last row
          this means that the hyperplane intersects [0,..,1]
@@ -507,7 +508,7 @@ LABELreturn_bestnew:
      last row of A= [0,...,0,1]
 
      1) Ly=Pb == y=b since P only permutes the 0's of   b
-     
+
   design:
     for each row from end
       perform back substitution
@@ -523,7 +524,7 @@ void qh_backnormal (realT **rows, int numrow, int numcol, boolT sign,
   realT diagonal;
   boolT waszero;
   int zerocol= -1;
-  
+
   normalp= normal + numcol - 1;
   *normalp--= (sign ? -1.0 : 1.0);
   for(i= numrow; i--; ) {
@@ -557,7 +558,7 @@ void qh_backnormal (realT **rows, int numrow, int numcol, boolT sign,
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="gausselim">-</a>
-  
+
   qh_gausselim( rows, numrow, numcol, sign )
     Gaussian elimination with partial pivoting
 
@@ -580,7 +581,7 @@ void qh_gausselim(realT **rows, int numrow, int numcol, boolT *sign, boolT *near
   realT *ai, *ak, *rowp, *pivotrow;
   realT n, pivot, pivot_abs= 0.0, temp;
   int i, j, k, pivoti, flip=0;
-  
+
   *nearzero= False;
   for(k= 0; k < numrow; k++) {
     pivot_abs= fabs_((rows[k])[k]);
@@ -592,9 +593,9 @@ void qh_gausselim(realT **rows, int numrow, int numcol, boolT *sign, boolT *near
       }
     }
     if (pivoti != k) {
-      rowp= rows[pivoti]; 
-      rows[pivoti]= rows[k]; 
-      rows[k]= rowp; 
+      rowp= rows[pivoti];
+      rows[pivoti]= rows[k];
+      rows[k]= rowp;
       *sign ^= 1;
       flip ^= 1;
     }
@@ -630,7 +631,7 @@ void qh_gausselim(realT **rows, int numrow, int numcol, boolT *sign, boolT *near
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="getangle">-</a>
-  
+
   qh_getangle( vect1, vect2 )
     returns the dot product of two vectors
     if qh.RANDOMdist, joggles result
@@ -657,7 +658,7 @@ realT qh_getangle(pointT *vect1, pointT *vect2) {
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="getcenter">-</a>
-  
+
   qh_getcenter( vertices )
     returns arithmetic center of a set of vertices as a new point
 
@@ -688,7 +689,7 @@ pointT *qh_getcenter(setT *vertices) {
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="getcentrum">-</a>
-  
+
   qh_getcentrum( facet )
     returns the centrum for a facet as a new point
 
@@ -712,7 +713,7 @@ pointT *qh_getcentrum(facetT *facet) {
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="getdistance">-</a>
-  
+
   qh_getdistance( facet, neighbor, mindist, maxdist )
     returns the maxdist and mindist distance of any vertex from neighbor
 
@@ -726,7 +727,7 @@ pointT *qh_getcentrum(facetT *facet) {
 realT qh_getdistance(facetT *facet, facetT *neighbor, realT *mindist, realT *maxdist) {
   vertexT *vertex, **vertexp;
   realT dist, maxd, mind;
-  
+
   FOREACHvertex_(facet->vertices)
     vertex->seen= False;
   FOREACHvertex_(neighbor->vertices)
@@ -759,7 +760,7 @@ realT qh_getdistance(facetT *facet, facetT *neighbor, realT *mindist, realT *max
   qh_normalize( normal, dim, toporient )
     normalize a vector and report if too small
     does not use min norm
-  
+
   see:
     qh_normalize2
 */
@@ -769,7 +770,7 @@ void qh_normalize (coordT *normal, int dim, boolT toporient) {
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="normalize2">-</a>
-  
+
   qh_normalize2( normal, dim, toporient, minnorm, ismin )
     normalize a vector and report if too small
     qh.MINdenom/MINdenom1 are the upper limits for divide overflow
@@ -777,7 +778,7 @@ void qh_normalize (coordT *normal, int dim, boolT toporient) {
   returns:
     normalized vector
     flips sign if !toporient
-    if minnorm non-NULL, 
+    if minnorm non-NULL,
       sets ismin if normal < minnorm
 
   notes:
@@ -786,7 +787,7 @@ void qh_normalize (coordT *normal, int dim, boolT toporient) {
     if divide by zero (divzero ())
        sets largest element to   +/-1
        bumps Znearlysingular
-      
+
   design:
     computes norm
     test for minnorm
@@ -799,7 +800,7 @@ void qh_normalize (coordT *normal, int dim, boolT toporient) {
       if nearzero
         sets norm to direction of maximum value
 */
-void qh_normalize2 (coordT *normal, int dim, boolT toporient, 
+void qh_normalize2 (coordT *normal, int dim, boolT toporient,
             realT *minnorm, boolT *ismin) {
   int k;
   realT *colp, *maxp, norm= 0, temp, *norm1, *norm2, *norm3;
@@ -813,17 +814,17 @@ void qh_normalize2 (coordT *normal, int dim, boolT toporient,
   else if (dim == 3)
     norm= sqrt((*normal)*(*normal) + (*norm1)*(*norm1) + (*norm2)*(*norm2));
   else if (dim == 4) {
-    norm= sqrt((*normal)*(*normal) + (*norm1)*(*norm1) + (*norm2)*(*norm2) 
+    norm= sqrt((*normal)*(*normal) + (*norm1)*(*norm1) + (*norm2)*(*norm2)
                + (*norm3)*(*norm3));
   }else if (dim > 4) {
-    norm= (*normal)*(*normal) + (*norm1)*(*norm1) + (*norm2)*(*norm2) 
+    norm= (*normal)*(*normal) + (*norm1)*(*norm1) + (*norm2)*(*norm2)
                + (*norm3)*(*norm3);
     for (k= dim-4, colp= normal+4; k--; colp++)
       norm += (*colp) * (*colp);
     norm= sqrt(norm);
   }
   if (minnorm) {
-    if (norm < *minnorm) 
+    if (norm < *minnorm)
       *ismin= True;
     else
       *ismin= False;
@@ -865,7 +866,7 @@ void qh_normalize2 (coordT *normal, int dim, boolT toporient,
 	  *colp= 0.0;
 	*maxp= temp;
 	zzinc_(Znearlysingular);
-	trace0((qh ferr, "qh_normalize: norm=%2.2g too small during p%d\n", 
+	trace0((qh ferr, "qh_normalize: norm=%2.2g too small during p%d\n",
 	       norm, qh furthest_id));
 	return;
       }
@@ -876,13 +877,13 @@ void qh_normalize2 (coordT *normal, int dim, boolT toporient,
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="projectpoint">-</a>
-  
+
   qh_projectpoint( point, facet, dist )
     project point onto a facet by dist
 
   returns:
     returns a new point
-    
+
   notes:
     if dist= distplane(point,facet)
       this projects point to hyperplane
@@ -892,7 +893,7 @@ pointT *qh_projectpoint(pointT *point, facetT *facet, realT dist) {
   pointT *newpoint, *np, *normal;
   int normsize= qh normal_size,k;
   void **freelistp; /* used !qh_NOmem */
-  
+
   qh_memalloc_(normsize, freelistp, newpoint, pointT);
   np= newpoint;
   normal= facet->normal;
@@ -901,10 +902,10 @@ pointT *qh_projectpoint(pointT *point, facetT *facet, realT dist) {
   return(newpoint);
 } /* projectpoint */
 
-  
+
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="setfacetplane">-</a>
-  
+
   qh_setfacetplane( facet )
     sets the hyperplane for a facet
     if qh.RANDOMdist, joggles hyperplane
@@ -955,7 +956,7 @@ void qh_setfacetplane(facetT *facet) {
 	coord= vertex->point;
 	for (k= qh hull_dim; k--; )
 	  *(gmcoord++)= *coord++ * qh_randomfactor();
-      }	  
+      }
     }else {
       FOREACHvertex_(facet->vertices)
        qh gm_row[i++]= vertex->point;
@@ -985,7 +986,7 @@ void qh_setfacetplane(facetT *facet) {
     }
     qh_sethyperplane_gauss(qh hull_dim, qh gm_row, point0, facet->toporient,
            	facet->normal, &facet->offset, &nearzero);
-    if (nearzero) { 
+    if (nearzero) {
       if (qh_orientoutside (facet)) {
 	trace0((qh ferr, "qh_setfacetplane: flipped orientation after testing interior_point during p%d\n", qh furthest_id));
       /* this is part of using Gaussian Elimination.  For example in 5-d
@@ -1026,7 +1027,7 @@ void qh_setfacetplane(facetT *facet) {
           wwval_(Wnewvertexmax)= dist;
 	  if (dist > qh max_outside) {
 	    qh max_outside= dist;  /* used by qh_maxouter() */
-	    if (dist > qh TRACEdist) 
+	    if (dist > qh TRACEdist)
 	      istrace= True;
 	  }
 	}else if (-dist > qh TRACEdist)
@@ -1054,9 +1055,9 @@ void qh_setfacetplane(facetT *facet) {
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="sethyperplane_det">-</a>
-  
+
   qh_sethyperplane_det( dim, rows, point0, toporient, normal, offset, nearzero )
-    given dim X dim array indexed by rows[], one row per point, 
+    given dim X dim array indexed by rows[], one row per point,
         toporient (flips all signs),
         and point0 (any row)
     set normalized hyperplane equation from oriented simplex
@@ -1096,7 +1097,7 @@ void qh_setfacetplane(facetT *facet) {
     Then minnorm = 2 u M_a M_d M_d M_d / qh.ONEmerge
     Note that qh.one_merge is approx. 82 u M_a and norm is usually about M_d M_d M_d
 */
-void qh_sethyperplane_det (int dim, coordT **rows, coordT *point0, 
+void qh_sethyperplane_det (int dim, coordT **rows, coordT *point0,
           boolT toporient, coordT *normal, realT *offset, boolT *nearzero) {
   realT maxround, dist;
   int i;
@@ -1170,7 +1171,7 @@ void qh_sethyperplane_det (int dim, coordT **rows, coordT *point0,
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="sethyperplane_gauss">-</a>
-  
+
   qh_sethyperplane_gauss( dim, rows, point0, toporient, normal, offset, nearzero )
     given (dim-1) X dim array of rows[i]= V_{i+1} - V_0 (point0)
     set normalized hyperplane equation from oriented simplex
@@ -1182,24 +1183,24 @@ void qh_sethyperplane_det (int dim, coordT **rows, coordT *point0,
   notes:
     if nearzero
       orientation may be incorrect because of incorrect sign flips in gausselim
-    solves [V_n-V_0,...,V_1-V_0, 0 .. 0 1] * N == [0 .. 0 1] 
-        or [V_n-V_0,...,V_1-V_0, 0 .. 0 1] * N == [0] 
+    solves [V_n-V_0,...,V_1-V_0, 0 .. 0 1] * N == [0 .. 0 1]
+        or [V_n-V_0,...,V_1-V_0, 0 .. 0 1] * N == [0]
     i.e., N is normal to the hyperplane, and the unnormalized
         distance to [0 .. 1] is either 1 or   0
 
   design:
     perform gaussian elimination
     flip sign for negative values
-    perform back substitution 
+    perform back substitution
     normalize result
     compute offset
 */
-void qh_sethyperplane_gauss (int dim, coordT **rows, pointT *point0, 
+void qh_sethyperplane_gauss (int dim, coordT **rows, pointT *point0,
 		boolT toporient, coordT *normal, coordT *offset, boolT *nearzero) {
   coordT *pointcoord, *normalcoef;
   int k;
   boolT sign= toporient, nearzero2= False;
-  
+
   qh_gausselim(rows, dim-1, dim, &sign, nearzero);
   for(k= dim-1; k--; ) {
     if ((rows[k])[k] < 0)
@@ -1226,5 +1227,5 @@ void qh_sethyperplane_gauss (int dim, coordT **rows, pointT *point0,
     *offset -= *pointcoord++ * *normalcoef++;
 } /* sethyperplane_gauss */
 
-  
+
 

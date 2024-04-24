@@ -1,6 +1,6 @@
 /*
  * SOLID - Software Library for Interference Detection
- * 
+ *
  * Copyright (C) 2001-2003  Dtecta.  All rights reserved.
  *
  * This library may be distributed under the terms of the Q Public License
@@ -15,8 +15,8 @@
  * This library is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
  * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * Commercial use or any other use of this library not covered by either 
- * the QPL or the GPL requires an additional license from Dtecta. 
+ * Commercial use or any other use of this library not covered by either
+ * the QPL or the GPL requires an additional license from Dtecta.
  * Please contact info@dtecta.com for enquiries about the terms of commercial
  * use of this library.
  */
@@ -29,7 +29,7 @@
 #      define DECLSPEC extern
 #   elif defined(SOLID_DLL_EXPORT)
 #      define DECLSPEC __declspec(dllexport)
-#   else 
+#   else
 #      define DECLSPEC __declspec(dllimport)
 #   endif
 #else
@@ -37,12 +37,19 @@
 #endif
 
 #define DT_DECLARE_HANDLE(name) typedef struct name##__ { int unused; } *name
-    
+
 
 typedef unsigned int   DT_Index;
 typedef unsigned int   DT_Count;
 typedef unsigned int   DT_Size;
-typedef float          DT_Scalar; 
+
+#ifdef USE_DOUBLES
+typedef double         DT_Scalar;
+#else
+typedef float          DT_Scalar;
+#endif
+
+
 typedef int            DT_Bool;
 
 #define DT_FALSE 0
@@ -51,7 +58,7 @@ typedef int            DT_Bool;
 #define DT_CONTINUE 0
 #define DT_DONE 1
 
-typedef DT_Scalar DT_Vector3[3]; 
-typedef DT_Scalar DT_Quaternion[4]; 
+typedef DT_Scalar DT_Vector3[3];
+typedef DT_Scalar DT_Quaternion[4];
 
 #endif

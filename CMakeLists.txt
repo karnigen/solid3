@@ -1,6 +1,9 @@
-cmake_minimum_required(VERSION 2.8.8)
+# cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.10.0)
 
 project(SOLID)
+
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}")
 
@@ -30,11 +33,20 @@ if(NOT DYNAMIC_SOLID)
   add_definitions(-DSOLID_STATIC)
 endif(NOT DYNAMIC_SOLID)
 
+# Tracing
+option(USE_TRACER "Use tracing." OFF)
+if(USE_TRACER)
+  add_definitions(-DUSE_TRACER)
+endif(USE_TRACER)
+
+
+# Double-precision floating-point numbers
 option(USE_DOUBLES "Use double-precision floating-point numbers." OFF)
 
 if(USE_DOUBLES)
   add_definitions(-DUSE_DOUBLES)
 endif(USE_DOUBLES)
+
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include
@@ -70,6 +82,7 @@ endif(WIN32)
 option(BUILD_EXAMPLES "Build examples." ON)
 
 if(BUILD_EXAMPLES)
+  set(OpenGL_GL_PREFERENCE "GLVND")  # select GLVND | LEGACY
   find_package(GLUT)
   find_package(OpenGL)
 endif()

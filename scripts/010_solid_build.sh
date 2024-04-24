@@ -21,12 +21,11 @@ fi
 cd build
 
 # - optimization turns itself on
-# -DBUILD_EXAMPLES=ON - build examples
-# -DDYNAMIC_SOLID=OFF - static library
-# -DUSE_DOUBLE - normal single precision
+# - BUILD_EXAMPLES=ON - build examples
+# - DYNAMIC_SOLID=OFF - static library
+# - USE_DOUBLE=ON     - double precision
+# - USE_TRACER=ON     - tracer is used
 
-#cmake ../solid3 -DDYNAMIC_SOLID=OFF -DCMAKE_VERBOSE_MAKEFILE=ON
-cmake .. -DDYNAMIC_SOLID=OFF -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_DOUBLES=ON -DBUILD_EXAMPLES=OFF
-#cmake .. -DDYNAMIC_SOLID=OFF -DCMAKE_VERBOSE_MAKEFILE=ON
+cmake .. -DDYNAMIC_SOLID=OFF -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_DOUBLES=ON -DBUILD_EXAMPLES=OFF -DUSE_TRACER=ON
 make -j
 

@@ -1,6 +1,6 @@
 /*
  * SOLID - Software Library for Interference Detection
- * 
+ *
  * Copyright (C) 2001-2003  Dtecta.  All rights reserved.
  *
  * This library may be distributed under the terms of the Q Public License
@@ -15,8 +15,8 @@
  * This library is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
  * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * Commercial use or any other use of this library not covered by either 
- * the QPL or the GPL requires an additional license from Dtecta. 
+ * Commercial use or any other use of this library not covered by either
+ * the QPL or the GPL requires an additional license from Dtecta.
  * Please contact info@dtecta.com for enquiries about the terms of commercial
  * use of this library.
  */
@@ -24,13 +24,13 @@
 #include <GL/glut.h>
 #include <SOLID.h>
 
-#define DISPLAY           // Interactively draw new placements 
-#define LOG               // Show logging in console window 
+#define DISPLAY           // Interactively draw new placements
+#define LOG               // Show logging in console window
 
-#define DRAW_BBOX         // Draw the world-axis aligned bounding boxes 
+#define DRAW_BBOX         // Draw the world-axis aligned bounding boxes
 //#define DRAW_COORD      // Draw local coordinate systems
 
-//#define USE_BOXES       // Use boxes as objects  
+//#define USE_BOXES       // Use boxes as objects
 //#define USE_HULL        // Box shape is convex hull of its vertices
 //#define USE_COMPLEX     // Box is a triangle mesh and has no interior
 //#define USE_QUADS       // Idem, but now a quad mesh
@@ -39,10 +39,10 @@
 //#define USE_TRIANGLES   // Use triangles as objects
 
 //#define USE_SPHERES     // Use spheres as objects
-                          // Penetration depth computations are 
+                          // Penetration depth computations are
                           // terible, since GJK seldom returns
                           // more than two vertices for a pair of
-                          // spheres. EPA `hates' symmetry. 
+                          // spheres. EPA `hates' symmetry.
 
 //#define USE_MARGIN      // The easy way out is to define the
                           // spheres as points and set their
@@ -59,23 +59,23 @@
 #include "MT_Matrix3x3.h"
 #include "MT_Transform.h"
 
-inline MT_Scalar irnd() { return 2.0f * MT_random() - 1.0f; }  
+inline MT_Scalar irnd() { return 2.0f * MT_random() - 1.0f; }
 
-const MT_Scalar SPACE_SIZE = 0.1f;  // Size of the space 
-const MT_Scalar SIZE_RATIO = 1.0e-0;  // Difference in size 
+const MT_Scalar SPACE_SIZE = 0.1f;  // Size of the space
+const MT_Scalar SIZE_RATIO = 1.0e-0;  // Difference in size
 const MT_Scalar STEPSIZE   = 5.0f;  // Displacement of camera in degrees
 
 #ifdef SCALING_ON
 
 const MT_Scalar SCALE_BOTTOM = 0.5f; // Lowest scale factor
-const MT_Scalar SCALE_RANGE  = 2.0f; // Range for scaling 
+const MT_Scalar SCALE_RANGE  = 2.0f; // Range for scaling
 									 //	[SCALE_BOTTOM, SCALE_BOTTOM + SCALE_RANGE ]
 #endif
 
 class Shape {
 public:
 	Shape(DT_ShapeHandle shape = 0) : m_shape(shape) {}
-    virtual ~Shape() {}	
+    virtual ~Shape() {}
 
 	void setShape(DT_ShapeHandle shape) { m_shape = shape; }
 
@@ -90,18 +90,18 @@ protected:
 
 class GLSphere : public Shape {
 public:
-    GLSphere(MT_Scalar radius) 
+    GLSphere(MT_Scalar radius)
 #if defined(USE_MARGIN)
-      :	Shape(DT_NewPoint(MT_Vector3(0.0f, 0.0f, 0.0f))), 
+      :	Shape(DT_NewPoint(MT_Vector3(0.0f, 0.0f, 0.0f))),
 #else
-      :	Shape(DT_NewSphere(1.0f)), 
+      :	Shape(DT_NewSphere(1.0f)),
 #endif
-		m_radius(radius) 
+		m_radius(radius)
 	{}
 
-	virtual void paint() const 
-	{ 
-		glutSolidSphere(m_radius, 20, 20); 
+	virtual void paint() const
+	{
+		glutSolidSphere(m_radius, 20, 20);
 	}
 
 private:
@@ -114,35 +114,40 @@ public:
 	{
 		m_points[0].setValue(points[0]);
 		m_points[1].setValue(points[1]);
-		m_points[2].setValue(points[2]);			
+		m_points[2].setValue(points[2]);
 
 		m_base = DT_NewVertexBase(m_points, 0);
 #if defined(USE_HULL)
 
 		setShape(DT_NewPolytope(m_base));
-		
+
 		DT_VertexRange(0, 3);
 
 		DT_EndPolytope();
 
 #else
 		setShape(DT_NewComplexShape(m_base));
-		
+
 		DT_VertexRange(0, 3);
-		
+
 		DT_EndComplexShape();
 #endif
 	}
 
-	virtual void paint() const 
-	{ 
+	virtual void paint() const
+	{
 		glBegin(GL_TRIANGLES);
-    
-		glVertex3fv(m_points[0]);
-		glVertex3fv(m_points[1]);
-		glVertex3fv(m_points[2]);
-		
-	    glEnd();	
+
+		#ifdef USE_DOUBLES
+			glVertex3dv(m_points[0]);
+			glVertex3dv(m_points[1]);
+			glVertex3dv(m_points[2]);
+		#else
+			glVertex3fv(m_points[0]);
+			glVertex3fv(m_points[1]);
+			glVertex3fv(m_points[2]);
+		#endif
+	    glEnd();
 	}
 
 private:
@@ -153,15 +158,15 @@ private:
 class GLBox : public Shape {
 public:
 
-	GLBox(MT_Scalar x, MT_Scalar y, MT_Scalar z) 
+	GLBox(MT_Scalar x, MT_Scalar y, MT_Scalar z)
       :	m_extent(x, y, z)
 	{
 		MT_Vector3 e(x * 0.5f, y * 0.5f, z * 0.5f);
-		
+
 		unsigned int bits;
 		for (bits = 0x0; bits != 0x08; ++bits)
 		{
-			m_vertices[bits] = MT_Point3((bits & 0x1) ? e[0] : -e[0], 
+			m_vertices[bits] = MT_Point3((bits & 0x1) ? e[0] : -e[0],
 										 (bits & 0x2) ? e[1] : -e[1],
 										 (bits & 0x4) ? e[2] : -e[2]);
 		}
@@ -170,7 +175,7 @@ public:
 
 #if defined(USE_HULL)
 		setShape(DT_NewPolytope(m_base));
-		
+
 		DT_VertexRange(0, 8);
 
 		DT_EndPolytope();
@@ -180,133 +185,133 @@ public:
 
 #ifdef USE_QUADS
 
-		DT_Begin();   
+		DT_Begin();
 		DT_VertexIndex(0);
 		DT_VertexIndex(2);
 		DT_VertexIndex(6);
 		DT_VertexIndex(4);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(1);
 		DT_VertexIndex(3);
 		DT_VertexIndex(7);
 		DT_VertexIndex(5);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(0);
 		DT_VertexIndex(1);
 		DT_VertexIndex(5);
 		DT_VertexIndex(4);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(2);
 		DT_VertexIndex(3);
 		DT_VertexIndex(7);
 		DT_VertexIndex(6);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(0);
 		DT_VertexIndex(1);
 		DT_VertexIndex(3);
 		DT_VertexIndex(2);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(4);
 		DT_VertexIndex(5);
 		DT_VertexIndex(7);
 		DT_VertexIndex(6);
 		DT_End();
-#else      
-		DT_Begin();   
+#else
+		DT_Begin();
 		DT_VertexIndex(0);
 		DT_VertexIndex(2);
 		DT_VertexIndex(6);
 		DT_End();
 
-		DT_Begin();   
+		DT_Begin();
 		DT_VertexIndex(2);
 		DT_VertexIndex(6);
 		DT_VertexIndex(4);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(1);
 		DT_VertexIndex(3);
 		DT_VertexIndex(7);
 		DT_End();
 
-		DT_Begin();   
+		DT_Begin();
 		DT_VertexIndex(3);
 		DT_VertexIndex(7);
 		DT_VertexIndex(5);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(0);
 		DT_VertexIndex(1);
 		DT_VertexIndex(5);
 		DT_End();
 
-		DT_Begin();   
+		DT_Begin();
 		DT_VertexIndex(1);
 		DT_VertexIndex(5);
 		DT_VertexIndex(4);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(2);
 		DT_VertexIndex(3);
 		DT_VertexIndex(7);
 		DT_End();
 
-		DT_Begin();   
+		DT_Begin();
 		DT_VertexIndex(3);
 		DT_VertexIndex(7);
 		DT_VertexIndex(6);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(0);
 		DT_VertexIndex(1);
 		DT_VertexIndex(3);
 		DT_End();
 
-		DT_Begin();   
+		DT_Begin();
 		DT_VertexIndex(1);
 		DT_VertexIndex(3);
 		DT_VertexIndex(2);
 		DT_End();
-		
-		DT_Begin();   
+
+		DT_Begin();
 		DT_VertexIndex(4);
 		DT_VertexIndex(5);
 		DT_VertexIndex(7);
 		DT_End();
 
-		DT_Begin();   
+		DT_Begin();
 		DT_VertexIndex(5);
 		DT_VertexIndex(7);
 		DT_VertexIndex(6);
 		DT_End();
 
-#endif  
+#endif
 
 		DT_EndComplexShape();
 
 #else
-	
+
 		setShape(DT_NewBox(x, y, z));
 
 #endif
 
-	}    	
-    
-	virtual void paint() const 
+	}
+
+	virtual void paint() const
 	{
         glPushMatrix();
         glScalef(m_extent[0], m_extent[1], m_extent[2]);
@@ -317,26 +322,26 @@ public:
 private:
 	MT_Point3           m_vertices[8];
 	MT_Vector3          m_extent;
-	DT_VertexBaseHandle m_base; 
+	DT_VertexBaseHandle m_base;
 };
 
 
 class GLCone : public Shape {
 public:
-    GLCone(MT_Scalar bottomRadius, MT_Scalar height) 
+    GLCone(MT_Scalar bottomRadius, MT_Scalar height)
       :	Shape(DT_NewCone(bottomRadius, height)),
 		m_bottomRadius(bottomRadius),
 		m_height(height),
 		m_displayList(0)
 	{}
 
-	virtual void paint() const 
-	{ 
-		if (m_displayList) 
+	virtual void paint() const
+	{
+		if (m_displayList)
 		{
 			glCallList(m_displayList);
 		}
-		else 
+		else
 		{
 			GLUquadricObj *quadObj = gluNewQuadric();
 			m_displayList = glGenLists(1);
@@ -351,7 +356,7 @@ public:
 			glEndList();
 		}
 	}
-  
+
 private:
 	MT_Scalar m_bottomRadius;
 	MT_Scalar m_height;
@@ -363,20 +368,20 @@ class GLCylinder : public Shape {
 private:
     mutable GLuint displayList;
 public:
-    GLCylinder(MT_Scalar radius, MT_Scalar height) 
+    GLCylinder(MT_Scalar radius, MT_Scalar height)
       :	Shape(DT_NewCylinder(radius, height)),
 		m_radius(radius),
 		m_height(height),
-		m_displayList(0) 
+		m_displayList(0)
 	{}
 
-	virtual void paint() const 
-	{ 
-		if (m_displayList) 
+	virtual void paint() const
+	{
+		if (m_displayList)
 		{
-			glCallList(m_displayList); 
+			glCallList(m_displayList);
 		}
-		else 
+		else
 		{
 			GLUquadricObj *quadObj = gluNewQuadric();
 			m_displayList = glGenLists(1);
@@ -391,7 +396,7 @@ public:
 			glEndList();
 		}
 	}
-  
+
 private:
 	MT_Scalar m_radius;
 	MT_Scalar m_height;
@@ -423,15 +428,15 @@ public:
 	Object() {}
 	Object(Shape *shape, MT_Scalar margin = 0.0f)
 	  : m_shape(shape),
-		m_object(DT_CreateObject(this, shape->getShape())) 
+		m_object(DT_CreateObject(this, shape->getShape()))
 	{
 		DT_SetMargin(m_object, margin);
 	}
 
-	~Object() 
+	~Object()
 	{
 		DT_DestroyObject(m_object);
-		delete m_shape; 
+		delete m_shape;
 	}
 
 	void setShape(DT_ShapeHandle shape)
@@ -439,11 +444,11 @@ public:
 		m_shape->setShape(shape);
 	}
 
-	void paint() const 
+	void paint() const
 	{
 		float m[16];
 		DT_GetMatrixf(m_object, m);
-		glPushMatrix(); 
+		glPushMatrix();
 		glMultMatrixf(m);
 #ifdef DRAW_COORD
 		coordSystem();
@@ -480,8 +485,8 @@ Object obj2(new GLSphere(1.0f));
 
 #elif defined(USE_TRIANGLES)
 
-static DT_Vector3 points[] = { 
-	{ -1.0, -1.0, 1.0f } , 
+static DT_Vector3 points[] = {
+	{ -1.0, -1.0, 1.0f } ,
 	{  1.0f, -1.0f, 1.0f },
     { -1.0f, 1.0f, 1.0f }
 };
@@ -505,7 +510,7 @@ DT_Bool   intersection;
 
 const void *hit_client;
 
-void display_bbox(const MT_Point3& min, const MT_Point3& max) 
+void display_bbox(const MT_Point3& min, const MT_Point3& max)
 {
     glColor3f(0.0f, 1.0f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -520,7 +525,7 @@ void display_bbox(const MT_Point3& min, const MT_Point3& max)
     glVertex3d(min[0], max[1], max[2]);
     glVertex3d(min[0], min[1], min[2]);
     glVertex3d(min[0], min[1], max[2]);
-    glEnd();  
+    glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
@@ -528,22 +533,22 @@ void display_bbox(const MT_Point3& min, const MT_Point3& max)
 
 #ifdef DISPLAY
 
-void display(void) 
+void display(void)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     obj1.paint();
 	obj2.paint();
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
- 
+
 #ifdef DRAW_BBOX
 	MT_Point3 min;
 	MT_Point3 max;
-	DT_GetBBox(obj1.getHandle(), min, max); 
+	DT_GetBBox(obj1.getHandle(), min, max);
 	display_bbox(min, max);
-	DT_GetBBox(obj2.getHandle(), min, max); 
+	DT_GetBBox(obj2.getHandle(), min, max);
 	display_bbox(min, max);
 #endif
 
@@ -557,35 +562,55 @@ void display(void)
         glPointSize(1);
     }
     else
-#endif 
+#endif
     {
         glBegin(GL_LINES);
-        glVertex3fv(cp1);
-        glVertex3fv(cp2);
+		#ifdef USE_DOUBLES
+			glVertex3dv(cp1);
+			glVertex3dv(cp2);
+		#else
+			glVertex3fv(cp1);
+			glVertex3fv(cp2);
+		#endif
 		glEnd();
 	}
-	
-	
+
+
 	glColor3f(1.0f, 0.0f, 0.0f);
 
 	if (hit_client && param < 1.0f)
 	{
 		glBegin(GL_LINES);
-		glVertex3fv(source);
-		glVertex3fv(spot);
+		#ifdef USE_DOUBLES
+			glVertex3dv(source);
+			glVertex3dv(spot);
+		#else
+			glVertex3fv(source);
+			glVertex3fv(spot);
+		#endif
 		glEnd();
-	
+
 		glColor3f(0.0f, 0.0f, 1.0f);
 		glBegin(GL_LINES);
-		glVertex3fv(spot);
-		glVertex3fv(target);
+		#ifdef USE_DOUBLES
+			glVertex3dv(spot);
+			glVertex3dv(target);
+		#else
+			glVertex3fv(spot);
+			glVertex3fv(target);
+		#endif
 		glEnd();
 	}
 	else
 	{
 		glBegin(GL_LINES);
-		glVertex3fv(source);
-		glVertex3fv(target);
+		#ifdef USE_DOUBLES
+			glVertex3dv(source);
+			glVertex3dv(target);
+		#else
+			glVertex3fv(source);
+			glVertex3fv(target);
+		#endif
 		glEnd();
 	}
 
@@ -594,22 +619,31 @@ void display(void)
 		glPointSize(5);
 		glColor3f(1.0f, 1.0f, 1.0f);
         glBegin(GL_POINTS);
-        glVertex3fv(spot);
+		#ifdef USE_DOUBLES
+			glVertex3dv(spot);
+		#else
+        	glVertex3fv(spot);
+		#endif
         glEnd();
-        
+
 		glPointSize(1);
 
 		glColor3f(0.0f, 1.0f, 0.0f);
-		
+
 		if (normal.length2() > 0.0f)
 		{
 			glBegin(GL_LINES);
-			glVertex3fv(spot);
-			glVertex3fv(spot + normal.normalized());
+			#ifdef USE_DOUBLES
+				glVertex3dv(spot);
+				glVertex3dv(spot + normal.normalized());
+			#else
+				glVertex3fv(spot);
+				glVertex3fv(spot + normal.normalized());
+			#endif
 			glEnd();
 		}
     }
-  
+
     glEnable(GL_LIGHTING);
     glEnable(GL_DEPTH_TEST);
 
@@ -640,10 +674,10 @@ MT_Vector3 separation;
 
 DT_SceneHandle scene;
 
-void doTest() 
+void doTest()
 {
 	DT_SetPosition(obj1.getHandle(), pos1);
-	DT_SetOrientation(obj1.getHandle(), orn1);	
+	DT_SetOrientation(obj1.getHandle(), orn1);
 	DT_SetPosition(obj2.getHandle(), pos2);
 	DT_SetOrientation(obj2.getHandle(), orn2);
 
@@ -666,14 +700,14 @@ void doTest()
 
     }
     else {
-#ifdef LOG 
+#ifdef LOG
         std::cout << "No intersection ";
 #endif
         DT_GetClosestPair(obj1.getHandle(), obj2.getHandle(), cp1, cp2);
 		separation = cp2 - cp1;
     }
-#ifdef LOG    
-    std::cout << "distance = " << cp1.distance(cp2);   
+#ifdef LOG
+    std::cout << "distance = " << cp1.distance(cp2);
     std::cout << std::endl;
 #endif
 
@@ -685,9 +719,9 @@ void doTest()
 	}
 
 	spot = source.lerp(target, param);
- 
+
     display();
-    
+
 #ifdef STATISTICS
 	extern int num_iterations;
 	extern int num_irregularities;
@@ -696,24 +730,24 @@ void doTest()
 	static int sum_iterations = 0;
 	static int num_placements = 0;
 
-	if (num_iterations > max_iterations) {  
+	if (num_iterations > max_iterations) {
 		max_iterations = num_iterations;
 	}
     sum_iterations += num_iterations;
 	++num_placements;
-    std::cout << "#iters = " << num_iterations << ",  max = " << 
-        max_iterations << ", avg = " << sum_iterations / num_placements << ",  #irregs = " << 
-        num_irregularities << std::endl; 
+    std::cout << "#iters = " << num_iterations << ",  max = " <<
+        max_iterations << ", avg = " << sum_iterations / num_placements << ",  #irregs = " <<
+        num_irregularities << std::endl;
 #endif
 }
 
-MT_Scalar distance; 
+MT_Scalar distance;
 MT_Scalar ele, azi;
 
-void setCamera(); 
+void setCamera();
 
 void newPlacements()
-{        
+{
 #ifdef LOG
 	static int num_placements = 0;
 
@@ -723,7 +757,7 @@ void newPlacements()
     pos1.setValue(irnd() * SPACE_SIZE, irnd() * SPACE_SIZE, irnd() * SPACE_SIZE);
     pos2.setValue(irnd() * SPACE_SIZE, irnd() * SPACE_SIZE, irnd() * SPACE_SIZE);
 	orn1 = MT_Quaternion::random();
-	orn2 = MT_Quaternion::random(); 
+	orn2 = MT_Quaternion::random();
 
 #ifdef SCALING_ON
 	scl1.setValue(SCALE_BOTTOM + SCALE_RANGE * MT_random(),
@@ -734,7 +768,7 @@ void newPlacements()
 				  SCALE_BOTTOM + SCALE_RANGE * MT_random(),
 				  SCALE_BOTTOM + SCALE_RANGE * MT_random());
 #endif
- 
+
 
 	source.setValue(irnd() * SPACE_SIZE, irnd() * SPACE_SIZE, irnd() * SPACE_SIZE);
 	target.setValue(irnd() * SPACE_SIZE, irnd() * SPACE_SIZE, irnd() * SPACE_SIZE);
@@ -745,32 +779,32 @@ void newPlacements()
 	setCamera();
 }
 
-void toggleIdle() 
+void toggleIdle()
 {
     static bool idle = true;
-    if (idle) 
+    if (idle)
 	{
         glutIdleFunc(newPlacements);
         idle = false;
     }
-    else 
+    else
 	{
         glutIdleFunc(0);
         idle = true;
     }
 }
 
-void setCamera() 
+void setCamera()
 {
     glLoadIdentity();
     MT_Scalar rele = MT_radians(ele);
     MT_Scalar razi = MT_radians(azi);
-    MT_Point3 eye(distance * sin(razi) * cos(rele), 
+    MT_Point3 eye(distance * sin(razi) * cos(rele),
                   distance * sin(rele),
                   distance * cos(razi) * cos(rele));
 
-	gluLookAt(eye[0], eye[1], eye[2], 
-              cp1[0], cp1[1], cp1[2], 
+	gluLookAt(eye[0], eye[1], eye[2],
+              cp1[0], cp1[1], cp1[2],
               0.0f, 1.0f, 0.0f);
 	display();
 }
@@ -784,22 +818,22 @@ void zoomIn() { distance -= MT_Scalar(0.1); setCamera(); }
 void zoomOut() { distance += MT_Scalar(0.1); setCamera(); }
 
 
-void separate() 
-{ 
+void separate()
+{
 	if (separation.length2() != MT_Scalar(0.0))
 	{
-		pos2 += 0.01f * separation.normalized(); 
-	    doTest(); 
+		pos2 += MT_Scalar(0.01) * separation.normalized();
+	    doTest();
 	}
 }
 
 void connect()
-{ 
+{
 	if (separation.length2() != MT_Scalar(0.0))
 	{
-		pos2 -= 0.01f * separation.normalized(); 
-	    doTest(); 
-	} 
+		pos2 -= MT_Scalar(0.01) * separation.normalized();
+	    doTest();
+	}
 }
 
 
@@ -808,7 +842,7 @@ void move_down() { pos2[1] -= 0.01f;doTest();  }
 void move_right() { pos2[0] += 0.01f; doTest(); }
 void move_left() { pos2[0] -= 0.01f; doTest(); }
 
-void myReshape(int w, int h) 
+void myReshape(int w, int h)
 {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
@@ -819,28 +853,28 @@ void myReshape(int w, int h)
 
 void myKeyboard(unsigned char key, int x, int y)
 {
-    switch (key) 
+    switch (key)
 	{
-    case 'z': 
-		zoomIn(); 
+    case 'z':
+		zoomIn();
 		break;
-    case 'x': 
-		zoomOut(); 
+    case 'x':
+		zoomOut();
 		break;
-	case 'w': 
-		move_up(); 
+	case 'w':
+		move_up();
 		break;
-    case 's': 
-		move_down(); 
+    case 's':
+		move_down();
 		break;
-	case 'a': 
-		move_left(); 
+	case 'a':
+		move_left();
 		break;
-    case 'd': 
-		move_right(); 
-		break;  
+    case 'd':
+		move_right();
+		break;
 	case 'i':
-		toggleIdle(); 
+		toggleIdle();
 		break;
     case ' ':
 		newPlacements();
@@ -852,25 +886,25 @@ void myKeyboard(unsigned char key, int x, int y)
 
 void mySpecial(int key, int x, int y)
 {
-    switch (key) 
+    switch (key)
 	{
-    case GLUT_KEY_LEFT: 
-		stepLeft(); 
+    case GLUT_KEY_LEFT:
+		stepLeft();
 		break;
-    case GLUT_KEY_RIGHT: 
-		stepRight(); 
+    case GLUT_KEY_RIGHT:
+		stepRight();
 		break;
     case GLUT_KEY_UP:
-		stepFront(); 
+		stepFront();
 		break;
     case GLUT_KEY_DOWN:
-		stepBack(); 
+		stepBack();
 		break;
     case GLUT_KEY_PAGE_UP:
-		zoomIn(); 
+		zoomIn();
 		break;
     case GLUT_KEY_PAGE_DOWN:
-		zoomOut(); 
+		zoomOut();
 		break;
     case GLUT_KEY_HOME:
 		toggleIdle();
@@ -891,7 +925,7 @@ void menu(int choice)
 
     static int fullScreen = 0;
     static int px, py, sx, sy;
- 
+
     switch(choice) {
     case 1:
         if (fullScreen==1) {
@@ -899,7 +933,7 @@ void menu(int choice)
             glutReshapeWindow(sx, sy);
             glutChangeToMenuEntry(1, "Full Screen", 1);
             fullScreen=0;
-        } 
+        }
 		else {
             px = glutGet((GLenum)GLUT_WINDOW_X);
             py = glutGet((GLenum)GLUT_WINDOW_Y);
@@ -921,7 +955,7 @@ void menu(int choice)
     }
 }
 
-void init(void) 
+void init(void)
 {
     GLfloat light_ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     GLfloat light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -930,31 +964,31 @@ void init(void)
     /*	light_position is NOT default value	*/
     GLfloat light_position0[] = { 1.0f, 1.0f, 1.0f, 0.0f };
     GLfloat light_position1[] = { -1.0f, -1.0f, -1.0f, 0.0f };
-  
+
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     glLightfv(GL_LIGHT0, GL_POSITION, light_position0);
-  
+
     glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
     glLightfv(GL_LIGHT1, GL_POSITION, light_position1);
-  
+
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHT1);
-  
+
     glShadeModel(GL_SMOOTH);
-  
+
 #ifdef SCALING_ON
 	glEnable(GL_NORMALIZE);
 #endif
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-  
+
     //  glEnable(GL_CULL_FACE);
     //  glCullFace(GL_BACK);
 
@@ -974,7 +1008,7 @@ void createMenu()
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -987,7 +1021,7 @@ int main(int argc, char **argv)
     glutSpecialFunc(mySpecial);
     glutReshapeFunc(myReshape);
     createMenu();
-	
+
     glutIdleFunc(0);
 	newPlacements();
     glutDisplayFunc(display);
