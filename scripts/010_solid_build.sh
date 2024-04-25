@@ -21,11 +21,15 @@ fi
 cd build
 
 # - optimization turns itself on
-# - BUILD_EXAMPLES=ON - build examples
-# - DYNAMIC_SOLID=OFF - static library
-# - USE_DOUBLE=ON     - double precision
-# - USE_TRACER=ON     - tracer is used
+# - BUILD_EXAMPLES=OFF - build examples
+# - DYNAMIC_SOLID=OFF  - static library
+# - USE_DOUBLE=ON      - double precision
+# - USE_TRACER=OFF     - tracer is used
+# - CMAKE_BUILD_TYPE=Release - release build automatically add NDEBUG
+#                   =Debug   - debug build library named libsolid_d.a
 
-cmake .. -DDYNAMIC_SOLID=OFF -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_DOUBLES=ON -DBUILD_EXAMPLES=OFF -DUSE_TRACER=ON
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DDYNAMIC_SOLID=OFF -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_DOUBLES=ON -DBUILD_EXAMPLES=ON -DUSE_TRACER=OFF
 make -j
+# cmake .. -DCMAKE_BUILD_TYPE=Release -DDYNAMIC_SOLID=OFF -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_DOUBLES=ON -DBUILD_EXAMPLES=ON -DUSE_TRACER=OFF
+# make -j
 
